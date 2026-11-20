@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B2545">
+<title>Ovinocultura 4.0 | Calculadora de Micro-Hato</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: { colors: {
+      navy:  { DEFAULT: '#0B2545', 700: '#13315C', 500: '#1F4E8C', 50: '#EEF3FA' },
+      agro:  { DEFAULT: '#2E9E4F', 600: '#23813E', 100: '#E3F5E9', 50: '#F2FBF5' }
+    } } }
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+  body { -webkit-tap-highlight-color: transparent; }
+  input[type=number]::-webkit-inner-spin-button { opacity: .4; }
+  .field:focus { outline: none; border-color: #2E9E4F; box-shadow: 0 0 0 3px rgba(46,158,79,.25); }
+  .field.err { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.2); }
+  .bar { transition: width .35s ease; }
+</style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans pb-28">
+
+<!-- ENCABEZADO -->
+<header class="bg-navy text-white">
+  <div class="max-w-xl mx-auto px-4 pt-6 pb-5">
+    <p class="text-agro text-xs font-bold tracking-widest uppercase">Ovinocultura 4.0 · Cabaña Formosa</p>
+    <h1 class="text-xl font-extrabold leading-tight mt-1">Calculadora Estratégica de Micro-Hato <span class="text-agro">(10 Vientres)</span></h1>
+    <p class="text-sm text-slate-300 mt-2">Completa los datos, mira tus números en vivo y descarga tu reporte en PDF.</p>
+  </div>
+  <div class="h-1.5 bg-agro"></div>
+</header>
+
+<main class="max-w-xl mx-auto px-4 -mt-0 py-5 space-y-5">
+
+  <!-- MONEDA -->
+  <section class="bg-white rounded-2xl shadow-sm p-4 flex items-center justify-between gap-3">
+    <div>
+      <p class="text-sm font-bold text-navy">Moneda de trabajo</p>
+      <p class="text-xs text-slate-500">Al cambiar, se convierten tus valores (1 US$ = 11 Bs).</p>
+    </div>
+    <select id="moneda" class="field border border-slate-300 rounded-xl px-3 py-2 text-base font-semibold text-navy bg-white">
+      <option value="BOB">BOB (Bs)</option>
+      <option value="USD">USD (US$)</option>
+    </select>
+  </section>
+
+  <!-- 1. IDENTIFICACIÓN -->
+  <section class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+    <h2 class="text-base font-extrabold text-navy flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-agro text-white text-xs flex items-center justify-center">1</span> Datos de identificación</h2>
+    <div id="f-ident" class="space-y-3"></div>
+  </section>
+
+  <!-- 2. INVERSIÓN EN ANIMALES -->
+  <section class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+    <h2 class="text-base font-extrabold text-navy flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-agro text-white text-xs flex items-center justify-center">2</span> Inversión en animales</h2>
+    <p class="text-xs bg-agro-50 text-agro-600 rounded-lg px-3 py-2">Lote pre-cargado: <b>10 vientres + 1 reproductor</b> Santa Inês.</p>
+    <div id="f-animales" class="space-y-3"></div>
+  </section>
+
+  <!-- 3. INFRAESTRUCTURA -->
+  <section class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+    <h2 class="text-base font-extrabold text-navy flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-agro text-white text-xs flex items-center justify-center">3</span> Infraestructura de cerca eléctrica</h2>
+    <p class="text-xs bg-agro-50 text-agro-600 rounded-lg px-3 py-2">Sistema rotacional pre-definido: <b>2.000 m² · 7 piquetes · 5 días de ocupación · 30 días de descanso</b>.</p>
+    <div id="f-cerca" class="space-y-3"></div>
+  </section>
+
+  <!-- 4. ALIMENTACIÓN -->
+  <section class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+    <h2 class="text-base font-extrabold text-navy flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-agro text-white text-xs flex items-center justify-center">4</span> Alimentación y concentrado</h2>
+    <div id="f-alim" class="space-y-3"></div>
+    <div id="alim-info" class="text-sm bg-navy-50 text-navy rounded-lg px-3 py-2"></div>
+  </section>
+
+  <!-- 5. COMERCIALIZACIÓN -->
+  <section class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+    <h2 class="text-base font-extrabold text-navy flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-agro text-white text-xs flex items-center justify-center">5</span> Precios de comercialización (doble propósito)</h2>
+    <div id="f-venta" class="space-y-3"></div>
+  </section>
+
+  <!-- RESULTADOS EN VIVO -->
+  <section class="space-y-4">
+    <h2 class="text-base font-extrabold text-navy px-1">📊 Resultados en vivo (24 meses)</h2>
+    <div id="resultados" class="space-y-4"></div>
+  </section>
+
+  <p class="text-[11px] text-slate-500 text-center px-4">Proyección referencial con fines educativos. Los precios son valores de ejemplo editables; ajústalos a tu mercado local.</p>
+</main>
+
+<!-- BARRA INFERIOR FIJA -->
+<div class="fixed bottom-0 inset-x-0 bg-navy shadow-[0_-4px_12px_rgba(0,0,0,.25)]" style="padding-bottom: env(safe-area-inset-bottom)">
+  <div class="max-w-xl mx-auto px-4 py-3 flex items-center gap-3">
+    <div class="shrink-0">
+      <p class="text-[10px] uppercase tracking-wide text-slate-300">Inversión inicial</p>
+      <p id="bar-total" class="text-white font-extrabold text-base leading-tight">—</p>
+    </div>
+    <button id="btn-pdf" type="button" class="flex-1 bg-agro hover:bg-agro-600 active:scale-[.98] transition text-white font-bold rounded-xl py-3 px-3 text-sm sm:text-base">
+      🚀 Generar Mi Reporte de Proyecto PDF
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 bg-slate-900 text-white text-sm px-4 py-2 rounded-xl shadow-lg opacity-0 pointer-events-none transition-opacity z-50 max-w-[90%] text-center"></div>
+
+<script>
+/* =========================================================
+   CONSTANTES DEL MODELO (editar aquí si cambian los supuestos)
+   ========================================================= */
+const C = {
+  VIENTRES: 10, REPRODUCTORES: 1,
+  RACION_KG_DIA: 0.200,          // kg/día/animal
+  PARTOS_24M: 3,                 // por vientre en 24 meses (intervalo 8 meses)
+  PROLIFICIDAD: 1.3,             // corderos/parto
+  KG_CARCASA: 18,                // kg gancho por cordero
+  DIAS_24M: 730,
+  MES_PRIMERA_VENTA: 10,         // 5 gestación + 2 lactancia + 3 engorde
+  TC: 11,                        // BOB por USD (tipo de cambio paralelo)
+  AREA_M2: 2000, PIQUETES: 7, DIAS_OCUPACION: 5, DIAS_DESCANSO: 30
+};
+
+/* =========================================================
+   DEFINICIÓN DE CAMPOS
+   ========================================================= */
+const GROUPS = {
+  'f-ident': [
+    { id: 'estudiante', label: 'Nombre del Estudiante / Productor', type: 'text', ph: 'Ej. Juan Pérez' },
+    { id: 'cabana',     label: 'Nombre de la Cabaña',               type: 'text', ph: 'Ej. Cabaña Santa Inês del Valle' }
+  ],
+  'f-animales': [
+    { id: 'pMatriz', label: 'Precio por Matriz Santa Inês',        money: true, def: 2500, hint: '× 10 vientres' },
+    { id: 'pRepro',  label: 'Precio del Reproductor Santa Inês',   money: true, def: 6000, hint: '× 1 macho' }
+  ],
+  'f-cerca': [
+    { id: 'pElec', label: 'Precio del Electrificador / Energizador',      money: true, def: 900 },
+    { id: 'pHilo', label: 'Precio del Rollo de Hilo Electroplástico',     money: true, def: 250 },
+    { id: 'pAisl', label: 'Precio del Paquete de Aisladores',             money: true, def: 120 }
+  ],
+  'f-alim': [
+    { id: 'pTon',  label: 'Precio de la Tonelada de Alimento Balanceado', money: true, def: 3800 }
+  ],
+  'f-venta': [
+    { id: 'pKilo', label: 'Precio de venta por Kilo Gancho / Carcasa (carne)', money: true, def: 35,   hint: 'por kg de carcasa' },
+    { id: 'pPie',  label: 'Precio promedio por Cabeza como Pie de Cría / Genética', money: true, def: 1800, hint: 'reproductor o matriz registrada' },
+    { id: 'pSel',  label: 'Tasa de reemplazo / selección (%)', money: false, def: 20, min: 0, max: 60, hint: '% de corderos descartados o retenidos; no se venden como pie de cría' }
+  ]
+};
+
+let MONEDA = 'BOB';
+
+/* =========================================================
+   UTILIDADES
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const sym = () => MONEDA === 'BOB' ? 'Bs' : 'US$';
+const fmt = (n, d = 2) => {
+  if (!isFinite(n)) n = 0;
+  const neg = n < 0;
+  const [i, f] = Math.abs(n).toFixed(d).split('.');
+  return (neg ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (f ? ',' + f : '');
+};
+const money = n => `${sym()} ${fmt(n)}`;
+const pct = n => `${fmt(n, 1)} %`;
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.style.opacity = 1;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.style.opacity = 0, 3200);
+}
+
+/* =========================================================
+   RENDER DEL FORMULARIO
+   ========================================================= */
+function renderFields() {
+  for (const [gid, fields] of Object.entries(GROUPS)) {
+    $(gid).innerHTML = fields.map(f => {
+      const isText = f.type === 'text';
+      return `
+      <label class="block">
+        <span class="text-sm font-semibold text-navy">${f.label}${f.money ? ' <span class="cur text-agro-600 font-bold"></span>' : ''}</span>
+        <input id="${f.id}" ${isText
+          ? `type="text" maxlength="60" autocomplete="off" placeholder="${f.ph || ''}"`
+          : `type="number" inputmode="decimal" step="any" min="${f.min ?? 0}" ${f.max ? `max="${f.max}"` : ''} value="${f.def}"`}
+          class="field ${f.money ? 'money' : ''} mt-1 w-full border border-slate-300 rounded-xl px-3 py-3 text-base bg-white">
+        ${f.hint ? `<span class="text-xs text-slate-500">${f.hint}</span>` : ''}
+      </label>`;
+    }).join('');
+  }
+  updateCurLabels();
+}
+
+function updateCurLabels() {
+  document.querySelectorAll('.cur').forEach(e => e.textContent = `(${sym()})`);
+}
+
+/* =========================================================
+   LECTURA DE VALORES + MOTOR DE CÁLCULO
+   ========================================================= */
+const num = id => Math.max(0, parseFloat($(id).value) || 0);
+
+function readValues() {
+  return {
+    estudiante: $('estudiante').value,
+    cabana: $('cabana').value,
+    pMatriz: num('pMatriz'), pRepro: num('pRepro'),
+    pElec: num('pElec'), pHilo: num('pHilo'), pAisl: num('pAisl'),
+    pTon: num('pTon'),
+    pKilo: num('pKilo'), pPie: num('pPie'),
+    pSel: Math.min(60, num('pSel'))
+  };
+}
+
+function calc(v) {
+  // Inversión inicial
+  const inv = {
+    matrices: C.VIENTRES * v.pMatriz,
+    repro: C.REPRODUCTORES * v.pRepro,
+    elec: v.pElec, hilo: v.pHilo, aisl: v.pAisl,
+    alim: v.pTon
+  };
+  const total = Object.values(inv).reduce((a, b) => a + b, 0);
+
+  // Biología a 24 meses
+  const partos = C.VIENTRES * C.PARTOS_24M;                 // 30
+  const corderos = Math.round(partos * C.PROLIFICIDAD);     // 39
+  const machos = Math.floor(corderos / 2);                  // 19
+  const hembras = corderos - machos;                        // 20
+
+  // Alimentación
+  const kgDia = (C.VIENTRES + C.REPRODUCTORES) * C.RACION_KG_DIA;   // 2.2
+  const diasTon = Math.floor(1000 / kgDia);                         // 454
+  const diasFaltan = Math.max(0, C.DIAS_24M - diasTon);
+  const kgExtra = diasFaltan * kgDia;
+  const costoExtra = (kgExtra / 1000) * v.pTon;
+
+  // Opción A: carne
+  const kgCarcasaTotal = corderos * C.KG_CARCASA;
+  const ingA = kgCarcasaTotal * v.pKilo;
+
+  // Opción B: pie de cría
+  const cabezasB = Math.floor(corderos * (1 - v.pSel / 100));
+  const ingB = cabezasB * v.pPie;
+
+  const utilA = ingA - total, utilB = ingB - total;
+  const roiA = total > 0 ? utilA / total * 100 : 0;
+  const roiB = total > 0 ? utilB / total * 100 : 0;
+
+  // ROI ajustado (incluye alimento adicional para completar 24 meses)
+  const totalAj = total + costoExtra;
+  const roiAjA = totalAj > 0 ? (ingA - totalAj) / totalAj * 100 : 0;
+  const roiAjB = totalAj > 0 ? (ingB - totalAj) / totalAj * 100 : 0;
+
+  const ratio = ingA > 0 ? ingB / ingA : 0;
+
+  return { inv, total, partos, corderos, machos, hembras, kgDia, diasTon, diasFaltan, kgExtra, costoExtra,
+           kgCarcasaTotal, ingA, cabezasB, ingB, utilA, utilB, roiA, roiB, totalAj, roiAjA, roiAjB, ratio };
+}
+
+/* =========================================================
+   RENDER DE RESULTADOS
+   ========================================================= */
+function render() {
+  const v = readValues(), r = calc(v);
+
+  $('bar-total').textContent = money(r.total);
+
+  $('alim-info').innerHTML =
+    `Ración automática: <b>${fmt(C.RACION_KG_DIA, 3)} kg/día/animal</b> × 11 animales = <b>${fmt(r.kgDia, 1)} kg/día</b>.<br>` +
+    `1 tonelada rinde <b>${r.diasTon} días</b> de mantenimiento para el lote adulto.`;
+
+  const maxIng = Math.max(r.ingA, r.ingB, 1);
+  const col = x => x >= 0 ? 'text-agro-600' : 'text-red-600';
+
+  $('resultados').innerHTML = `
+    <!-- KPIs -->
+    <div class="grid grid-cols-3 gap-2 text-center">
+      <div class="bg-white rounded-xl shadow-sm p-3">
+        <p class="text-[10px] uppercase text-slate-500 font-semibold">Partos</p>
+        <p class="text-xl font-extrabold text-navy">${r.partos}</p>
+        <p class="text-[10px] text-slate-500">10 × 3 en 24 m</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-3">
+        <p class="text-[10px] uppercase text-slate-500 font-semibold">Corderos</p>
+        <p class="text-xl font-extrabold text-navy">${r.corderos}</p>
+        <p class="text-[10px] text-slate-500">${r.machos} ♂ / ${r.hembras} ♀</p>
+      </div>
+      <div class="bg-white rounded-xl shadow-sm p-3">
+        <p class="text-[10px] uppercase text-slate-500 font-semibold">1ª venta</p>
+        <p class="text-xl font-extrabold text-navy">Mes ${C.MES_PRIMERA_VENTA}</p>
+        <p class="text-[10px] text-slate-500">5 + 2 + 3 meses</p>
+      </div>
+    </div>
+
+    <!-- Desglose de inversión -->
+    <div class="bg-white rounded-2xl shadow-sm p-4">
+      <h3 class="font-bold text-navy mb-2">Inversión inicial desglosada</h3>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-slate-100">
+          <tr><td class="py-1.5">10 matrices Santa Inês</td><td class="text-right">${money(r.inv.matrices)}</td></tr>
+          <tr><td class="py-1.5">1 reproductor Santa Inês</td><td class="text-right">${money(r.inv.repro)}</td></tr>
+          <tr><td class="py-1.5">Electrificador / energizador</td><td class="text-right">${money(r.inv.elec)}</td></tr>
+          <tr><td class="py-1.5">Hilo electroplástico (rollo)</td><td class="text-right">${money(r.inv.hilo)}</td></tr>
+          <tr><td class="py-1.5">Aisladores (paquete)</td><td class="text-right">${money(r.inv.aisl)}</td></tr>
+          <tr><td class="py-1.5">1 t alimento balanceado</td><td class="text-right">${money(r.inv.alim)}</td></tr>
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-navy font-extrabold text-navy"><td class="pt-2">TOTAL</td><td class="pt-2 text-right">${money(r.total)}</td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Comparativa -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="bg-white rounded-2xl shadow-sm p-3 border-t-4 border-slate-400">
+        <p class="text-[11px] font-bold uppercase text-slate-500">Opción A · Carne</p>
+        <p class="text-[11px] text-slate-500 mb-2">${r.corderos} × ${C.KG_CARCASA} kg = ${fmt(r.kgCarcasaTotal, 0)} kg</p>
+        <p class="text-[11px] text-slate-500">Ingreso bruto</p>
+        <p class="text-lg font-extrabold text-navy leading-tight">${money(r.ingA)}</p>
+        <p class="text-[11px] text-slate-500 mt-2">Utilidad</p>
+        <p class="font-bold ${col(r.utilA)}">${money(r.utilA)}</p>
+        <p class="text-[11px] text-slate-500 mt-2">ROI 24 meses</p>
+        <p class="text-xl font-extrabold ${col(r.roiA)}">${pct(r.roiA)}</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm p-3 border-t-4 border-agro ring-1 ring-agro/30">
+        <p class="text-[11px] font-bold uppercase text-agro-600">Opción B · Pie de Cría</p>
+        <p class="text-[11px] text-slate-500 mb-2">${r.cabezasB} cabezas (sel. ${fmt(v.pSel, 0)} %)</p>
+        <p class="text-[11px] text-slate-500">Ingreso bruto</p>
+        <p class="text-lg font-extrabold text-navy leading-tight">${money(r.ingB)}</p>
+        <p class="text-[11px] text-slate-500 mt-2">Utilidad</p>
+        <p class="font-bold ${col(r.utilB)}">${money(r.utilB)}</p>
+        <p class="text-[11px] text-slate-500 mt-2">ROI 24 meses</p>
+        <p class="text-xl font-extrabold ${col(r.roiB)}">${pct(r.roiB)}</p>
+      </div>
+    </div>
+
+    <!-- Barras -->
+    <div class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+      <div>
+        <div class="flex justify-between text-xs mb-1"><span class="font-semibold text-slate-600">Carne</span><span>${money(r.ingA)}</span></div>
+        <div class="h-4 bg-slate-100 rounded-full overflow-hidden"><div class="bar h-full bg-slate-400" style="width:${r.ingA / maxIng * 100}%"></div></div>
+      </div>
+      <div>
+        <div class="flex justify-between text-xs mb-1"><span class="font-semibold text-agro-600">Pie de Cría</span><span>${money(r.ingB)}</span></div>
+        <div class="h-4 bg-slate-100 rounded-full overflow-hidden"><div class="bar h-full bg-agro" style="width:${r.ingB / maxIng * 100}%"></div></div>
+      </div>
+      <p class="text-sm text-center font-bold text-navy">La Opción B genera <span class="text-agro-600">${fmt(r.ratio, 2)}×</span> el ingreso de la Opción A</p>
+    </div>
+
+    <!-- Línea de tiempo -->
+    <div class="bg-white rounded-2xl shadow-sm p-4">
+      <h3 class="font-bold text-navy mb-2">Ruta hasta la primera venta</h3>
+      <div class="flex text-[11px] text-center font-semibold text-white rounded-lg overflow-hidden">
+        <div class="bg-navy-500 py-2" style="width:50%">Gestación<br>5 meses</div>
+        <div class="bg-navy-700 py-2" style="width:20%">Lact.<br>2 m</div>
+        <div class="bg-agro py-2" style="width:30%">Engorde<br>3 m</div>
+      </div>
+      <p class="text-xs text-slate-500 mt-2">Primera venta en el <b>mes ${C.MES_PRIMERA_VENTA}</b> · Intervalo entre partos: 8 meses (3 partos en 24 meses).</p>
+    </div>
+
+    <!-- Sensibilidad alimento -->
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900">
+      <p class="font-bold mb-1">⚠️ Ojo con el alimento a 24 meses</p>
+      <p>Tu tonelada inicial cubre ${r.diasTon} de ${C.DIAS_24M} días. Para completar el período faltan ~${fmt(r.kgExtra, 0)} kg (${money(r.costoExtra)}).
+      Con ese costo extra, el ROI ajustado sería <b>${pct(r.roiAjA)}</b> (carne) y <b>${pct(r.roiAjB)}</b> (pie de cría).</p>
+    </div>
+  `;
+}
+
+/* =========================================================
+   GENERACIÓN DEL PDF
+   ========================================================= */
+function generarPDF() {
+  const v = readValues();
+
+  // Validación de identificación
+  let ok = true;
+  ['estudiante', 'cabana'].forEach(id => {
+    const el = $(id);
+    const bad = !el.value.trim();
+    el.classList.toggle('err', bad);
+    if (bad && ok) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus(); }
+    if (bad) ok = false;
+  });
+  if (!ok) { toast('Completa tu nombre y el de la cabaña para generar el reporte.'); return; }
+
+  if (!window.jspdf || !window.jspdf.jsPDF) { toast('No se pudo cargar jsPDF. Revisa tu conexión e intenta de nuevo.'); return; }
+
+  const r = calc(v);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const NAVY = [11, 37, 69], GREEN = [46, 158, 79], LIGHT = [227, 245, 233], GREY = [100, 116, 139];
+  const M = 14, W = 210, CW = W - 2 * M;
+  const S = sym();
+  const m = n => `${S} ${fmt(n)}`;
+
+  /* --- Membrete --- */
+  doc.setFillColor(...NAVY); doc.rect(0, 0, W, 30, 'F');
+  doc.setFillColor(...GREEN); doc.rect(0, 30, W, 2.5, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+  doc.text('Ovinocultura 4.0 - Cabaña Formosa', M, 14);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  doc.text('Reporte de Proyecto · Calculadora Estratégica de Micro-Hato (10 Vientres)', M, 21);
+  doc.setFontSize(8.5); doc.setTextColor(190, 205, 225);
+  doc.text('Santa Inês · Pastoreo rotacional con cerca eléctrica · Doble propósito', M, 26);
+
+  /* --- Encabezado de proyecto --- */
+  let y = 42;
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.text(v.cabana.trim(), M, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(60, 60, 60);
+  doc.text(`Estudiante / Productor: ${v.estudiante.trim()}`, M, y + 6);
+  doc.text(`Fecha de emisión: ${new Date().toLocaleDateString('es-BO')}   ·   Moneda: ${MONEDA}`, M, y + 11.5);
+  y += 18;
+
+  const secTitle = (txt) => {
+    if (y > 255) { doc.addPage(); y = 20; }
+    doc.setFillColor(...GREEN); doc.rect(M, y, 2.5, 6, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(...NAVY);
+    doc.text(txt, M + 5, y + 4.8);
+    y += 9;
+  };
+  const baseTbl = {
+    theme: 'grid', margin: { left: M, right: M },
+    styles: { fontSize: 9, cellPadding: 2, lineColor: [210, 218, 228], lineWidth: 0.2, textColor: [40, 40, 40] },
+    headStyles: { fillColor: NAVY, textColor: 255, fontStyle: 'bold' }
+  };
+
+  /* --- 1. Inversión inicial --- */
+  secTitle('1. Cuadro resumen de inversión inicial');
+  doc.autoTable({
+    ...baseTbl, startY: y,
+    head: [['Concepto', 'Cantidad', 'Precio unitario', 'Subtotal']],
+    body: [
+      ['Matrices Santa Inês', '10', m(v.pMatriz), m(r.inv.matrices)],
+      ['Reproductor Santa Inês', '1', m(v.pRepro), m(r.inv.repro)],
+      ['Electrificador / energizador', '1', m(v.pElec), m(r.inv.elec)],
+      ['Hilo electroplástico (rollo)', '1', m(v.pHilo), m(r.inv.hilo)],
+      ['Aisladores (paquete)', '1', m(v.pAisl), m(r.inv.aisl)],
+      ['Alimento balanceado (tonelada)', '1 t', m(v.pTon), m(r.inv.alim)]
+    ],
+    foot: [[{ content: 'INVERSIÓN INICIAL TOTAL', colSpan: 3 }, m(r.total)]],
+    footStyles: { fillColor: LIGHT, textColor: NAVY, fontStyle: 'bold' },
+    columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
+  });
+  y = doc.lastAutoTable.finalY + 9;
+
+  /* --- 2. Ficha técnica --- */
+  secTitle('2. Ficha técnica de infraestructura pastoril');
+  doc.autoTable({
+    ...baseTbl, startY: y,
+    head: [['Parámetro', 'Valor']],
+    body: [
+      ['Superficie total de pastoreo', `${fmt(C.AREA_M2, 0)} m²`],
+      ['División del área', `${C.PIQUETES} piquetes (≈ ${fmt(C.AREA_M2 / C.PIQUETES, 1)} m² c/u)`],
+      ['Ocupación por piquete', `${C.DIAS_OCUPACION} días`],
+      ['Descanso de la pastura', `${C.DIAS_DESCANSO} días`],
+      ['Ciclo rotacional completo', `${C.PIQUETES * C.DIAS_OCUPACION} días (7 piquetes × 5 días)`],
+      ['Lote adulto', '10 vientres + 1 reproductor = 11 animales'],
+      ['Ración de concentrado', `${fmt(C.RACION_KG_DIA, 3)} kg/día/animal = ${fmt(r.kgDia, 1)} kg/día en total`],
+      ['Rendimiento de 1 tonelada', `${r.diasTon} días de mantenimiento del lote adulto`]
+    ],
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 62 } }
+  });
+  y = doc.lastAutoTable.finalY + 9;
+
+  /* --- 3. Proyección biológica --- */
+  secTitle('3. Proyección biológica a 24 meses');
+  doc.autoTable({
+    ...baseTbl, startY: y,
+    head: [['Indicador', 'Resultado']],
+    body: [
+      ['Partos (10 vientres × 3 partos, intervalo de 8 meses)', `${r.partos} partos`],
+      ['Corderos producidos (prolificidad 1,3 corderos/parto)', `${r.corderos} (${r.machos} machos / ${r.hembras} hembras)`],
+      ['Primera venta', `Mes ${C.MES_PRIMERA_VENTA} (gestación 5 + lactancia 2 + engorde/selección 3)`]
+    ],
+    columnStyles: { 0: { fontStyle: 'bold', cellWidth: 95 } }
+  });
+  y = doc.lastAutoTable.finalY + 9;
+
+  /* --- 4. Matriz comparativa --- */
+  secTitle('4. Matriz comparativa de ingresos a 24 meses');
+  const B = t => ({ content: t, styles: { fontStyle: 'bold' } });
+  doc.autoTable({
+    ...baseTbl, startY: y,
+    head: [['Concepto', 'Opción A: Venta para Carne', 'Opción B: Pie de Cría (Cabaña 4.0)']],
+    body: [
+      ['Corderos producidos', `${r.corderos}`, `${r.corderos}`],
+      ['Animales comercializados', `${r.corderos}`, `${r.cabezasB} (selección/reemplazo ${fmt(v.pSel, 0)} %)`],
+      ['Base de venta', `${C.KG_CARCASA} kg de carcasa por cordero (${fmt(r.kgCarcasaTotal, 0)} kg)`, 'Precio por cabeza'],
+      ['Precio unitario', `${m(v.pKilo)} / kg gancho`, `${m(v.pPie)} / cabeza`],
+      [B('Ingreso bruto'), B(m(r.ingA)), B(m(r.ingB))],
+      ['Inversión inicial', m(r.total), m(r.total)],
+      [B('Utilidad neta'), B(m(r.utilA)), B(m(r.utilB))],
+      [B('ROI a 24 meses'), B(pct(r.roiA)), B(pct(r.roiB))]
+    ],
+    columnStyles: { 0: { cellWidth: 38 }, 2: { fillColor: LIGHT } }
+  });
+  y = doc.lastAutoTable.finalY + 3;
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(...GREY);
+  const nota = `ROI = (Ingreso bruto - Inversión inicial) / Inversión inicial. La tonelada inicial de alimento cubre ${r.diasTon} de ${C.DIAS_24M} días; completar 24 meses requiere ~${fmt(r.kgExtra, 0)} kg adicionales (${m(r.costoExtra)}), con ROI ajustado de ${pct(r.roiAjA)} (carne) y ${pct(r.roiAjB)} (pie de cría).`;
+  const notaL = doc.splitTextToSize(nota, CW);
+  doc.text(notaL, M, y + 3);
+  y += 3 + notaL.length * 3.6 + 7;
+
+  /* --- 5. Conclusión estratégica --- */
+  const msg = 'Muchos emprendedores inician en la ovinocultura con la visión de producir únicamente carne. Sin embargo, al invertir desde el día uno en alta genética registrada (Santa Inês), tu costo de mantenimiento a pasto es exactamente el mismo, pero el valor de comercialización de tus crías se triplica al venderlas como Pie de Cría. ¡Empieza con Genética, Construye Futuro!';
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  const lines = doc.splitTextToSize(msg, CW - 12);
+  const dyn = `Con tus datos: la Opción B genera ${fmt(r.ratio, 2)} veces el ingreso de la Opción A.`;
+  const boxH = 12 + lines.length * 4.9 + 11;
+  if (y + boxH > 280) { doc.addPage(); y = 20; }
+  doc.setFillColor(...LIGHT); doc.setDrawColor(...GREEN); doc.setLineWidth(0.9);
+  doc.roundedRect(M, y, CW, boxH, 3, 3, 'FD');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(...NAVY);
+  doc.text('CONCLUSIÓN ESTRATÉGICA 4.0', M + 6, y + 8);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30, 30, 30);
+  doc.text(lines, M + 6, y + 15);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...GREEN);
+  doc.text(dyn, M + 6, y + boxH - 4);
+
+  /* --- Pie de página --- */
+  const N = doc.getNumberOfPages();
+  for (let i = 1; i <= N; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(...GREEN); doc.setLineWidth(0.4); doc.line(M, 285, W - M, 285);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GREY);
+    doc.text('Ovinocultura 4.0 - Cabaña Formosa · Proyección referencial con fines educativos', M, 290);
+    doc.text(`Página ${i} de ${N}`, W - M, 290, { align: 'right' });
+  }
+
+  const safe = v.cabana.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '') || 'Proyecto';
+  doc.save(`Reporte_Ovinocultura4.0_${safe}.pdf`);
+  toast('✅ ¡Reporte PDF generado!');
+}
+
+/* =========================================================
+   EVENTOS E INICIO
+   ========================================================= */
+function cambiarMoneda(nueva) {
+  if (nueva === MONEDA) return;
+  const f = nueva === 'USD' ? 1 / C.TC : C.TC;
+  document.querySelectorAll('input.money').forEach(el => {
+    const val = parseFloat(el.value);
+    if (!isNaN(val)) el.value = Math.round(val * f * 100) / 100;
+  });
+  MONEDA = nueva;
+  updateCurLabels();
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderFields();
+  render();
+  document.addEventListener('input', e => {
+    if (e.target.matches('input')) {
+      e.target.classList.remove('err');
+      render();
+    }
+  });
+  $('moneda').addEventListener('change', e => cambiarMoneda(e.target.value));
+  $('btn-pdf').addEventListener('click', generarPDF);
+});
+</script>
+</body>
+</html>
